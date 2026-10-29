@@ -1,41 +1,17 @@
-name: Build APK
+name: sonora
+description: Unified music player
+publish_to: 'none'
+version: 1.0.0+1
 
-on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
+environment:
+  sdk: '>=3.0.0 <4.0.0'
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+dependencies:
+  flutter:
+    sdk: flutter
+  just_audio: ^0.10.6
+  shared_preferences: ^2.2.2
+  http: ^1.1.0
 
-      - uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
-          java-version: '17'
-
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.24.0'
-          cache: true
-
-      # 1. Создаем структуру ядра (папки lib и файлы)
-      - name: Install core
-        run: bash install_core.sh
-
-      # 2. Создаем платформенную папку android (флаг --no-pub чтобы не запускал pub get раньше времени)
-      - name: Create Android platform
-        run: flutter create --platforms=android --project-name sonora --no-pub .
-
-      # 3. И только теперь ставим зависимости
-      - run: flutter pub get
-
-      # 4. Собираем APK
-      - run: flutter build apk --release --split-per-abi
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: release-apk
-          path: build/app/outputs/flutter-apk/*.apk
+flutter:
+  uses-material-design: true
