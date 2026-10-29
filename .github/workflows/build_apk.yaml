@@ -3,7 +3,7 @@ name: Build APK
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:   # позволяет запускать сборку вручную кнопкой
+  workflow_dispatch:
 
 jobs:
   build:
@@ -21,9 +21,66 @@ jobs:
           flutter-version: '3.24.0'
           cache: true
 
-      - run: flutter pub get
+      - name: Init Flutter Project
+        run: |
+          flutter create --platforms=android --project-name sonora --no-pub .
+          rm -rf test/
 
-      - run: flutter build apk --release --split-per-abi
+      - name: Create Core Folders
+        run: |
+          mkdir -p lib/core/models lib/core/constants lib/screens lib/services/player
+          
+      - name: Create Core Files
+        run: |
+          cat > lib/core/constants/app_colors.dart << 'EOF'
+          import 'package:flutter/material.dart';
+          class AppColors {
+            static const background = Color(0xFF121212);
+            static const accent = Color(0xFF1DB954);
+          }
+          EOF
+          
+          cat > lib/core/models/track.dart << 'EOF'
+          class Track {
+            final String id, title, artist, source;
+            const Track({required this.id, required this.title, required this.artist, required this.source});
+          }
+          EOF
+          
+          cat > lib/services/player/player_service.dart << 'EOF'
+          import 'package:just_audio/just_audio.dart';
+          class PlayerService {
+            final AudioPlayer player = AudioPlayer();
+            Future<void> playUrl(String url) async { await player.setUrl(url); player.play(); }
+          }
+          EOF
+          
+          cat > lib/screens/home_screen.dart << 'EOF'
+          import 'package:flutter/material.dart';
+          class HomeScreen extends StatelessWidget {
+            const HomeScreen({super.key});
+            @override
+            Widget build(BuildContext context) => Scaffold(
+              backgroundColor: const Color(0xFF121212),
+              body: const Center(child: Text('Sonora Core Ready', style: TextStyle(color: Colors.white))),
+            );
+          }
+          EOF
+          
+          cat > lib/main.dart << 'EOF'
+          import 'package:flutter/material.dart';
+          import 'screens/home_screen.dart';
+          void main() => runApp(const MaterialApp(
+            debugShowCheckedModeBanner: false,
+            home: HomeScreen(),
+          ));
+          EOF
+
+      - name: Get Packages
+        run: flutter pub get
+
+      - name: Build APK
+        run: flutter build apk --release --split-per-abi
 
       - uses: actions/upload-artifact@v4
         with:
